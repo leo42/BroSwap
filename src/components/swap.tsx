@@ -5,6 +5,7 @@ import WalletPicker from './WalletPicker';
 import "./WalletPicker.css";
 import { formatDisplay } from './utils/formatters'; // Add this import
 import {Lucid , WalletApi} from 'lucid-cardano';
+import SwapIcon from './SwapIcon';
 
 interface Token {
   name: string;
@@ -41,6 +42,10 @@ const Swap = () => {
   const [walletApi, setWalletApi] = useState<WalletApi | undefined>(undefined);
   const [sellBalance, setSellBalance] = useState<number | null>(null);
   const [buyBalance, setBuyBalance] = useState<number | null>(null);
+  const [orderType, setOrderType] = useState<'market' | 'limit'>('market');
+  const [slippage, setSlippage] = useState<number>(0.5);
+  const [limitPrice, setLimitPrice] = useState<number | null>(null);
+  const [customSlippage, setCustomSlippage] = useState<string>('');
 
   useEffect(() => {
     if (walletApi && sellCurrency) {
@@ -113,11 +118,40 @@ const Swap = () => {
  
       
 
-  const handleCurrencyChange = (newCurrency, type: 'sell' | 'buy') => {
+  const handleCurrencyChange = (newCurrency: Token, type: 'sell' | 'buy') => {
+    const ADA: Token = { 
+      name: 'ADA', 
+      icon: '🔷', 
+      fullName: 'Cardano',
+      policy: '',
+      hexName: '',
+      decimals: 6
+    };
+
     if (type === 'sell') {
-      setSellCurrency(newCurrency);
-    } else {
-      setBuyCurrency(newCurrency);
+      if (newCurrency.name === 'ADA') {
+        // If selecting ADA on sell side, swap with buy side if it's also ADA
+        if (buyCurrency.name === 'ADA') {
+          setBuyCurrency(sellCurrency);
+        }
+        setSellCurrency(newCurrency);
+      } else {
+        // If selecting a token on sell side, set buy side to ADA
+        setSellCurrency(newCurrency);
+        setBuyCurrency(ADA);
+      }
+    } else { // type === 'buy'
+      if (newCurrency.name === 'ADA') {
+        // If selecting ADA on buy side, swap with sell side if it's also ADA
+        if (sellCurrency.name === 'ADA') {
+          setSellCurrency(buyCurrency);
+        }
+        setBuyCurrency(newCurrency);
+      } else {
+        // If selecting a token on buy side, set sell side to ADA
+        setBuyCurrency(newCurrency);
+        setSellCurrency(ADA);
+      }
     }
     setIsModalOpen(null);
   };
@@ -230,12 +264,13 @@ const Swap = () => {
   };
 
   const swapCurrencies = () => {
-    const temp = sellCurrency;
+    const tempCurrency = sellCurrency;
     setSellCurrency(buyCurrency);
-    setBuyCurrency(temp);
+    setBuyCurrency(tempCurrency);
+    
     const tempAmount = sellAmount;
     setSellAmount(buyAmount);
-    setBuyAmount(tempAmount); 
+    setBuyAmount(tempAmount);
   };
 
   const modal = () => {
@@ -313,6 +348,69 @@ const Swap = () => {
     setWalletApi(undefined);
   };
 
+  const renderOrderTypeControls = () => {
+    if (orderType === 'market') {
+      return (
+        <div className="slippageControl">
+          <label>Slippage Tolerance:</label>
+          <select 
+            value={customSlippage ? 'custom' : slippage.toString()} 
+            onChange={(e) => {
+              if (e.target.value === 'custom') {
+                setCustomSlippage(slippage.toString());
+              } else {
+                setSlippage(Number(e.target.value));
+                setCustomSlippage('');
+              }
+            }}
+          >
+            <option value="0.1">0.1%</option>
+            <option value="0.5">0.5%</option>
+            <option value="1">1%</option>
+            <option value="3">3%</option>
+            <option value="custom">Custom</option>
+          </select>
+          <input
+            type="number"
+            placeholder="Custom %"
+            value={customSlippage}
+            onChange={(e) => {
+              const value = Number(e.target.value);
+              if (value >= 0 && value <= 100) {
+                setCustomSlippage(e.target.value);
+                setSlippage(value);
+              } else if (value > 100) {
+                setCustomSlippage('100');
+                setSlippage(100);
+              } else if (value < 0 || e.target.value === '') {
+                setCustomSlippage('');
+                setSlippage(0);
+              }
+            }}
+          />%
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const renderLimitPriceControl = () => {
+    if (orderType === 'limit') {
+      return (
+        <div className="limitPriceControl">
+          <label>Limit Price:</label>
+          <input
+            type="number"
+            placeholder="Enter limit price"
+            value={limitPrice || ''}
+            onChange={(e) => setLimitPrice(Number(e.target.value))}
+          />
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="swapContainer">
       {wallet ? 
@@ -322,10 +420,34 @@ const Swap = () => {
         </div> :
         <button className="walletPickerButton" onClick={() => setWalletModalOpen(true)}>Select Wallet</button>
       }
-     '25% 50% MAX' 
-      {currencyInput('sell')}
-      <div className="swapArrow" onClick={() => swapCurrencies()}>↓</div>
-      {currencyInput('buy')}
+      
+      <div className="orderTypeSelector">
+        <button
+          className={`orderTypeButton ${orderType === 'market' ? 'active' : ''}`}
+          onClick={() => setOrderType('market')}
+        >
+          Market
+        </button>
+        <button
+          className={`orderTypeButton ${orderType === 'limit' ? 'active' : ''}`}
+          onClick={() => setOrderType('limit')}
+        >
+          Limit
+        </button>
+      </div>
+      
+      <div className="orderControls">
+        {renderOrderTypeControls()}
+        {renderLimitPriceControl()}
+      </div>
+      
+      <div className="currencyInputsContainer">
+        {currencyInput('sell')}
+        <div className="swapIconWrapper" onClick={() => swapCurrencies()}>
+          <SwapIcon className="swapIcon" />
+        </div>
+        {currencyInput('buy')}
+      </div>
 
       <button className="swapButton">Swap</button>
 

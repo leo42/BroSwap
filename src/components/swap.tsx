@@ -5,6 +5,7 @@ import WalletPicker from './WalletPicker';
 import "./WalletPicker.css";
 import { formatDisplay } from './utils/formatters'; // Add this import
 import {Lucid , WalletApi} from 'lucid-cardano';
+import debounce from 'lodash/debounce';
 import SwapIcon from './SwapIcon';
 
 interface Token {
@@ -114,9 +115,50 @@ const Swap = () => {
     }
   }, [walletApi, buyCurrency, wallet]); // Added 'wallet' to the dependency array
 
-        
- 
-      
+  const calculateBuyAmount = async () => {
+    if (sellAmount && sellCurrency && buyCurrency) {
+      try {
+        const queryParams = new URLSearchParams({
+          amountIn: sellAmount.toString(),
+          assetAPolicyId: sellCurrency.policy || '',
+          assetATokenName: sellCurrency.hexName || '',
+          assetBPolicyId: buyCurrency.policy || '',
+          assetBTokenName: buyCurrency.hexName || '',
+        });
+
+        const response = await fetch(`http://localhost:3000/api/calculateOut?${queryParams}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+        setBuyAmount(Math.round(data.amountOut)); // Store as integer
+      } catch (error) {
+        console.error('Error calculating buy amount:', error);
+        setBuyAmount(null);
+      }
+    } else {
+      setBuyAmount(null);
+    }
+  };
+
+  const debouncedCalculateBuyAmount = React.useCallback(
+    debounce(calculateBuyAmount, 1000, { trailing: true }),
+    [calculateBuyAmount]
+  );
+
+  useEffect(() => {
+    debouncedCalculateBuyAmount();
+    return () => {
+      debouncedCalculateBuyAmount.cancel();
+    };
+  }, [sellAmount, sellCurrency, buyCurrency, debouncedCalculateBuyAmount]);
 
   const handleCurrencyChange = (newCurrency: Token, type: 'sell' | 'buy') => {
     const ADA: Token = { 
@@ -156,85 +198,6 @@ const Swap = () => {
     setIsModalOpen(null);
   };
 
-
-  // useEffect(() => {
-  //   const calculateSellAmount = async () => {
-  //     if (buyAmount && buyCurrency && sellCurrency) {
-  //       try {
-  //         const queryParams = new URLSearchParams({
-  //           amountOut: buyAmount.toString(),
-  //           assetAPolicyId: buyCurrency.policy || '',
-  //           assetATokenName: buyCurrency.hexName || '',
-  //           assetBPolicyId: sellCurrency.policy || '',
-  //           assetBTokenName: sellCurrency.hexName || ''
-  //         });
-
-  //         const response = await fetch(`http://localhost:3000/api/calculateIn?${queryParams}`, {
-  //           method: 'GET',
-  //           headers: {
-  //             'Content-Type': 'application/json',
-  //           },  
-  //         });
-
-  //         if (!response.ok) {
-  //           throw new Error('Network response was not ok');
-  //         }
-
-  //         const data = await response.json();
-  //         setSellAmount(Math.round(data.amountIn)); // Store as integer
-
-  //       } catch (error) {
-  //         console.error('Error calculating sell amount:', error);
-  //         setSellAmount(null);
-  //       }
-  //     } else {
-  //       setSellAmount(null);
-  //     }
-  //   };
-
-  //   calculateSellAmount();
-  // }, [buyAmount, buyCurrency, sellCurrency]);
-
-    
-    
-    
-  useEffect(() => {
-    const calculateBuyAmount = async () => {
-      if (sellAmount && sellCurrency && buyCurrency) {
-        try {
-          const queryParams = new URLSearchParams({
-            amountIn: sellAmount.toString(),
-            assetAPolicyId: sellCurrency.policy || '',
-            assetATokenName: sellCurrency.hexName || '',
-            assetBPolicyId: buyCurrency.policy || '',
-            assetBTokenName: buyCurrency.hexName || '',
-          });
-
-          const response = await fetch(`http://localhost:3000/api/calculateOut?${queryParams}`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-
-          const data = await response.json();
-          setBuyAmount(Math.round(data.amountOut)); // Store as integer
-        } catch (error) {
-          console.error('Error calculating buy amount:', error);
-          setBuyAmount(null);
-        }
-      } else {
-        setBuyAmount(null);
-      }
-    };
-
-    calculateBuyAmount();
-  }, [sellAmount, sellCurrency, buyCurrency]);
-
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -248,8 +211,6 @@ const Swap = () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
-
-  
 
   useEffect(() => {
     setTokenList(supportedTokens);

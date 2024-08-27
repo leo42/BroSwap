@@ -122,6 +122,48 @@ const Swap = () => {
     setIsModalOpen(null);
   };
 
+
+  // useEffect(() => {
+  //   const calculateSellAmount = async () => {
+  //     if (buyAmount && buyCurrency && sellCurrency) {
+  //       try {
+  //         const queryParams = new URLSearchParams({
+  //           amountOut: buyAmount.toString(),
+  //           assetAPolicyId: buyCurrency.policy || '',
+  //           assetATokenName: buyCurrency.hexName || '',
+  //           assetBPolicyId: sellCurrency.policy || '',
+  //           assetBTokenName: sellCurrency.hexName || ''
+  //         });
+
+  //         const response = await fetch(`http://localhost:3000/api/calculateIn?${queryParams}`, {
+  //           method: 'GET',
+  //           headers: {
+  //             'Content-Type': 'application/json',
+  //           },  
+  //         });
+
+  //         if (!response.ok) {
+  //           throw new Error('Network response was not ok');
+  //         }
+
+  //         const data = await response.json();
+  //         setSellAmount(Math.round(data.amountIn)); // Store as integer
+
+  //       } catch (error) {
+  //         console.error('Error calculating sell amount:', error);
+  //         setSellAmount(null);
+  //       }
+  //     } else {
+  //       setSellAmount(null);
+  //     }
+  //   };
+
+  //   calculateSellAmount();
+  // }, [buyAmount, buyCurrency, sellCurrency]);
+
+    
+    
+    
   useEffect(() => {
     const calculateBuyAmount = async () => {
       if (sellAmount && sellCurrency && buyCurrency) {

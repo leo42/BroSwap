@@ -43,7 +43,7 @@ const Swap = () => {
   const [sellBalance, setSellBalance] = useState<number | null>(null);
   const [buyBalance, setBuyBalance] = useState<number | null>(null);
   const [orderType, setOrderType] = useState<'market' | 'limit'>('market');
-  const [slippage, setSlippage] = useState<number>(0.5);
+  const [slippage, setSlippage] = useState<number>(1);
   const [limitPrice, setLimitPrice] = useState<number | null>(null);
   const [customSlippage, setCustomSlippage] = useState<string>('');
 
@@ -326,6 +326,22 @@ const Swap = () => {
         </div>
         <div className="inputDetails">
           <span>{currency.fullName}</span>
+          {type === 'sell' && balance !== null && balance > 0 && (
+            <div className="balanceSlider">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={sellAmount !== null ? (sellAmount / balance) * 100 : 0}
+                onChange={(e) => {
+                  const percentage = Number(e.target.value);
+                  const newAmount = Math.floor((percentage / 100) * balance);
+                  setSellAmount(newAmount);
+                }}
+                />
+              <span>{sellAmount !== null ? ((sellAmount / balance) * 100).toFixed(2) : '0'}%</span>
+            </div>
+          )}
           {balance !== null && <span>Balance: {formatDisplay(balance, currency.decimals)}</span>}
         </div>
       </div>
@@ -366,7 +382,7 @@ const Swap = () => {
           >
             <option value="0.1">0.1%</option>
             <option value="0.5">0.5%</option>
-            <option value="1">1%</option>
+            <option value="1" selected>1%</option>
             <option value="3">3%</option>
             <option value="custom">Custom</option>
           </select>

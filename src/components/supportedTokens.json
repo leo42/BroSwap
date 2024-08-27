@@ -1,0 +1,58 @@
+[
+    {
+        "name": "ADA",
+        "policy": "",
+        "fullName": "Cardano",
+        "icon": "₳",
+        "hexName": "",
+        "decimals": 6
+    },
+    {
+        "name": "AGIX",
+        "policy": "6c8642400e8437edaa118e8c39ef73f1a6785631aecc096f2b4920f6",
+        "fullName": "SingularityNET",
+        "icon": "🧠",
+        "hexName": "41474958",
+        "decimals": 8
+    },
+    {
+        "name": "COPI",
+        "policy": "7d7ac07a2f2a25b7a4db868e4b7bd4526c24218fcf3efc1844583f5c",
+        "fullName": "Cornucopias",
+        "icon": "🌽",
+        "hexName": "434f5049",
+        "decimals": 6
+    },
+    {
+        "name": "DJED",
+        "policy": "8db269c3ec630e06ae29f74bc39edd1f87c819f1056206e879a1cd61",
+        "fullName": "DJED Stablecoin",
+        "icon": "💱",
+        "hexName": "446a65644d6963726f555344",
+        "decimals": 6
+    },
+    {
+        "name": "HOSKY",
+        "policy": "a0028f350aaabe0545fdcb56b039bfb08e4bb4d8c4d7c3c7d481c235",
+        "fullName": "HOSKY Token",
+        "icon": "🐶",
+        "hexName": "484f534b59",
+        "decimals": 0
+    },
+    {
+        "name": "IAGON",
+        "policy": "0b76dd9bd19e7b4f671c1b489ffc8cd1671b00e7c5e2b8b1d9e2e021",
+        "fullName": "IAG Token",
+        "icon": "🧊",
+        "hexName": "4941474f4e",
+        "decimals": 6
+    },
+    {
+        "name": "MIN",
+        "policy": "29d222ce763455e3d7a09a665ce554f00ac89d2e99a1a83d267170c6",
+        "fullName": "MIN Token",
+        "icon": "🔨",
+        "hexName": "4d494e",
+        "decimals": 6
+    }
+]

@@ -1,0 +1,97 @@
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+.darkMode {
+  --cllorange: rgba(255, 153, 0, 1);
+  --clrgreen: rgba(22, 217, 0, 1);
+  --clrred: #ff0000;
+  --clrNav: rgb(39 39 39);
+  --clrBackground: rgb(39 39 39);
+  --clrModal: rgb(53, 53, 53);
+  --clrInputs: rgb(105 105 105);
+  --clrNavText: white;
+  --clrSelect: gray;
+  --clrPlaceholder: rgb(230, 230, 230);
+  --clrWalletCreate1: rgb(240 240 240 / 16%);
+  --clrWalletCreate2: rgb(255 255 255 / 16%);
+  --shadowclr: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+  --angle: 0deg;
+  --opacity: 0.5;
+}
+
+.lightMode{
+  --cllorange: rgba(255, 153, 0, 1);
+  --clrgreen: rgba(22, 217, 0, 1);
+  --clrred: #ff0000;
+  --clrNav: rgb(255, 255, 255); 
+  --clrBackground: rgb(255, 255, 255);
+  --clrModal: rgb(255, 255, 255);
+  --clrInputs: rgb(255, 255, 255);
+  --clrNavText: black;
+  --clrSelect: white;
+  --clrPlaceholder: rgba(0, 0, 0, 0.322);
+  --clrWalletCreate1 : rgb(236, 236, 236);
+  --clrWalletCreate2 : rgb(255, 242, 222);
+  --shadowclr:rgba(0, 0, 0, 0.35) 0px 5px 15px;
+  --angle: 0deg;
+  --opacity: 0.5;
+}
+
+.themeToggleButton {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--clrNavText);
+  padding: 5px;
+  border-radius: 50%;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.themeToggleButton:hover {
+  background-color: var(--clrInputs);
+}
+
+.darkMode .themeToggleButton {
+  color: #f1c40f; /* Yellow color for the sun icon in dark mode */
+}
+
+.lightMode .themeToggleButton {
+  color: #34495e; /* Dark blue color for the moon icon in light mode */
+}
+
+#root {
+  margin: 0 auto;
+  padding: 2rem;
+  width: 100%;
+  height: 100vh;
+  text-align: center;
+  background-color: var(--clrBackground);
+  color: var(--clrNavText);
+  height: 100vh;
+}
+html, body {
+  overflow: hidden;
+}
+
+body {
+  margin: 0; /* Remove default margin */
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}

@@ -62,14 +62,13 @@ const Swap = () => {
             if(sellCurrency.policy === '' && sellCurrency.hexName === ''){
               balance += utxo.assets['lovelace'];
             }else{
-              balance += utxo.assets[sellCurrency.policy+sellCurrency.hexName];
+              balance += utxo.assets[sellCurrency.policy+sellCurrency.hexName] ? utxo.assets[sellCurrency.policy+sellCurrency.hexName] : 0n;
             }
           }
           setSellBalance(Number(balance));
         } catch (error) {
           console.error('Error fetching balance:', error);
           setSellBalance(null);
-          setBuyBalance(null);
         }
       };
 
@@ -77,6 +76,41 @@ const Swap = () => {
     }
   }, [walletApi, sellCurrency, wallet]); // Added 'wallet' to the dependency array
 
+  useEffect(() => {
+    if (walletApi && buyCurrency) {
+      const fetchBalance = async () => {
+        try {
+          const walletCips = window.cardano[wallet].supportedExtensions;
+          const walletApiInstance = await window.cardano[wallet].enable(walletCips);
+          const hexEncodedBalance = await walletApi.getBalance();
+          console.log('Hex encoded CBOR balance:', hexEncodedBalance);
+          const lucid = await Lucid.new(undefined, 'Mainnet');
+          lucid.selectWallet(walletApiInstance);
+          console.log(await lucid.wallet.address());
+
+          const utxos = await lucid.wallet.getUtxos();
+          console.log(utxos); 
+          let balance = 0n;
+          for (const utxo of utxos) {
+            if(buyCurrency.policy === '' && buyCurrency.hexName === ''){
+              balance += utxo.assets['lovelace'];
+            }else{
+              balance += utxo.assets[buyCurrency.policy+buyCurrency.hexName] ? utxo.assets[buyCurrency.policy+buyCurrency.hexName] : 0n;
+            }
+          }
+          setBuyBalance(Number(balance));
+        } catch (error) {
+          console.error('Error fetching balance:', error);
+          setBuyBalance(null);
+        }
+      };
+
+      fetchBalance();
+    }
+  }, [walletApi, buyCurrency, wallet]); // Added 'wallet' to the dependency array
+
+        
+ 
       
 
   const handleCurrencyChange = (newCurrency, type: 'sell' | 'buy') => {
@@ -215,7 +249,7 @@ const Swap = () => {
         </div>
         <div className="inputDetails">
           <span>{currency.fullName}</span>
-          {wallet && <span>Balance: {balance}</span>}
+          {balance !== null && <span>Balance: {formatDisplay(balance, currency.decimals)}</span>}
         </div>
       </div>
     );

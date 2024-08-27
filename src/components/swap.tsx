@@ -3,8 +3,8 @@ import './swap.css'; // Import the CSS file
 import supportedTokens from './supportedTokens.json'; // Import the token list
 import WalletPicker from './WalletPicker';
 import "./WalletPicker.css";
-import { formatDisplay } from './utils/formatters.js'; // Add this import
-import {Lucid , WalletApi, Blockfrost} from 'lucid-cardano';
+import { formatDisplay } from './utils/formatters'; // Add this import
+import {Lucid , WalletApi} from 'lucid-cardano';
 
 interface Token {
   name: string;
@@ -53,17 +53,23 @@ const Swap = () => {
           const lucid = await Lucid.new(undefined, 'Mainnet');
           lucid.selectWallet(walletApiInstance);
           console.log(await lucid.wallet.address());
+
           
           const utxos = await lucid.wallet.getUtxos();
-          
+          console.log(utxos); 
           let balance = 0n;
           for (const utxo of utxos) {
-            balance += utxo.assets[sellCurrency.policy+sellCurrency.hexName];
+            if(sellCurrency.policy === '' && sellCurrency.hexName === ''){
+              balance += utxo.assets['lovelace'];
+            }else{
+              balance += utxo.assets[sellCurrency.policy+sellCurrency.hexName];
+            }
           }
           setSellBalance(Number(balance));
         } catch (error) {
           console.error('Error fetching balance:', error);
           setSellBalance(null);
+          setBuyBalance(null);
         }
       };
 

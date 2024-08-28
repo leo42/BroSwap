@@ -227,3 +227,49 @@ input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
 }
+
+.priceAdjustButtons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.priceAdjustButtons button {
+  background-color: var(--clrSelect);
+  color: var(--clrNavText);
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.3s ease;
+  margin: 2px;
+}
+
+.priceAdjustButtons button:hover {
+  background-color: var(--clrInputs);
+}
+
+.limitPriceControl {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.limitPriceControl label {
+  margin-bottom: 5px;
+  color: #888;
+}
+
+.limitPriceControl input {
+  width: 100%;
+  background-color: var(--clrInputs);
+  color: var(--clrNavText);
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}

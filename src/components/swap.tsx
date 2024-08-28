@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import './swap.css'; // Import the CSS file
-import supportedTokens from './supportedTokens.json'; // Import the token list
+import React, { useState, useEffect, useCallback } from 'react';
+import './swap.css';
+import supportedTokens from './supportedTokens.json';
 import WalletPicker from './WalletPicker';
 import "./WalletPicker.css";
-import { formatDisplay } from './utils/formatters'; // Add this import
+import { formatDisplay } from './utils/formatters';
 import {Lucid , WalletApi} from 'lucid-cardano';
 import debounce from 'lodash/debounce';
 import SwapIcon from './SwapIcon';
@@ -47,6 +47,7 @@ const Swap = () => {
   const [slippage, setSlippage] = useState<number>(1);
   const [limitPrice, setLimitPrice] = useState<number | null>(null);
   const [customSlippage, setCustomSlippage] = useState<string>('');
+  const [currentMarketPrice, setCurrentMarketPrice] = useState<number | null>(null);
 
   useEffect(() => {
     if (walletApi && sellCurrency) {
@@ -115,7 +116,42 @@ const Swap = () => {
     }
   }, [walletApi, buyCurrency, wallet]); // Added 'wallet' to the dependency array
 
-  const calculateBuyAmount = async () => {
+  const fetchCurrentPrice = async () => {
+    try {
+      // Find the currency that is not ADA
+      const nonAdaCurrency = sellCurrency.policy === '' && sellCurrency.hexName === '' ? buyCurrency : sellCurrency;
+
+      // Populate new constants with the policyId and hexName
+      const nonAdaPolicyId = nonAdaCurrency.policy;
+      const nonAdaHexName = nonAdaCurrency.hexName;
+      const response = await fetch(`http://localhost:3000/api/asset-price?policyId=${nonAdaPolicyId}&tokenName=${nonAdaHexName}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      setCurrentMarketPrice(data.price);
+      setLimitPrice(data.price); // Set the limit price to the current market price initially
+    } catch (error) {
+      console.error('Error fetching current price:', error);
+      setCurrentMarketPrice(null);
+    }
+  };
+
+  const handleOrderTypeChange = (type: 'market' | 'limit') => {
+    setOrderType(type);
+    if (type === 'limit') {
+      fetchCurrentPrice();
+    }
+  };
+
+  const adjustLimitPrice = (adjustment: number) => {
+    if (currentMarketPrice !== null ) {
+      const newPrice = currentMarketPrice * (1 + adjustment);
+      setLimitPrice(Number(newPrice));
+    }
+  };
+
+  const calculateBuyAmount = useCallback(async () => {
     if (sellAmount && sellCurrency && buyCurrency) {
       try {
         const queryParams = new URLSearchParams({
@@ -146,9 +182,9 @@ const Swap = () => {
     } else {
       setBuyAmount(null);
     }
-  };
+  }, [sellAmount, sellCurrency, buyCurrency]);
 
-  const debouncedCalculateBuyAmount = React.useCallback(
+  const debouncedCalculateBuyAmount = useCallback(
     debounce(calculateBuyAmount, 1000, { trailing: true }),
     [calculateBuyAmount]
   );
@@ -232,6 +268,12 @@ const Swap = () => {
     const tempAmount = sellAmount;
     setSellAmount(buyAmount);
     setBuyAmount(tempAmount);
+    // Update market price and limit price when swapping currencies
+    if (orderType === 'limit' && currentMarketPrice !== null) {
+      const newMarketPrice = 1 / currentMarketPrice;
+      setCurrentMarketPrice(newMarketPrice);
+      setLimitPrice(newMarketPrice);
+    }
   };
 
   const modal = () => {
@@ -380,8 +422,21 @@ const Swap = () => {
             type="number"
             placeholder="Enter limit price"
             value={limitPrice || ''}
-            onChange={(e) => setLimitPrice(Number(e.target.value))}
+            onChange={(e) => {
+              const value = e.target.value;
+              const fullNumber = Number(value).toLocaleString('fullwide', { useGrouping: false, maximumFractionDigits: 40 });
+              setLimitPrice(Number(fullNumber));
+            }}
           />
+          <div className="priceAdjustButtons">
+            <button onClick={() => adjustLimitPrice(-0.1)}>-10%</button>
+            <button onClick={() => adjustLimitPrice(-0.05)}>-5%</button>
+            <button onClick={() => adjustLimitPrice(-0.01)}>-1%</button>
+            <button onClick={() => setLimitPrice(currentMarketPrice)}>Reset</button>
+            <button onClick={() => adjustLimitPrice(0.01)}>+1%</button>
+            <button onClick={() => adjustLimitPrice(0.05)}>+5%</button>
+            <button onClick={() => adjustLimitPrice(0.1)}>+10%</button>
+          </div>
         </div>
       );
     }
@@ -401,13 +456,13 @@ const Swap = () => {
       <div className="orderTypeSelector">
         <button
           className={`orderTypeButton ${orderType === 'market' ? 'active' : ''}`}
-          onClick={() => setOrderType('market')}
+          onClick={() => handleOrderTypeChange('market')}
         >
           Market
         </button>
         <button
           className={`orderTypeButton ${orderType === 'limit' ? 'active' : ''}`}
-          onClick={() => setOrderType('limit')}
+          onClick={() => handleOrderTypeChange('limit')}
         >
           Limit
         </button>

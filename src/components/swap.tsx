@@ -421,12 +421,8 @@ const Swap = () => {
           <input
             type="number"
             placeholder="Enter limit price"
-            value={limitPrice || ''}
-            onChange={(e) => {
-              const value = e.target.value;
-              const fullNumber = Number(value).toLocaleString('fullwide', { useGrouping: false, maximumFractionDigits: 40 });
-              setLimitPrice(Number(fullNumber));
-            }}
+            value={limitPrice?  Number(limitPrice).toLocaleString('fullwide', { useGrouping: false, maximumFractionDigits: 40 }) : ''}
+            onChange={(e) => {    setLimitPrice(Number(e.target.value))}}
           />
           <div className="priceAdjustButtons">
             <button onClick={() => adjustLimitPrice(-0.1)}>-10%</button>

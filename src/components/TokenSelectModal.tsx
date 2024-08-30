@@ -26,7 +26,7 @@ const TokenSelectModal: React.FC<TokenSelectModalProps> = ({
     hexName: '',
     ticker: '',
     fullName: '',
-    decimals: 0,
+    decimals: null,
   });
   const itemsPerPage = 20;
 
@@ -49,7 +49,7 @@ const TokenSelectModal: React.FC<TokenSelectModalProps> = ({
       console.error('Error fetching tokens:', error);
       setLoading(false);
     }   
-  }, [search, page, hasMore, tokens,loading]); // Add dependency array here
+  }, [search, page, hasMore, tokens,loading]);
 
   useEffect(() => {
     console.log('useEffect', isOpen);
@@ -84,9 +84,19 @@ const TokenSelectModal: React.FC<TokenSelectModalProps> = ({
     }
   };
 
+  const handleDecimalsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const decimals = value === '' ? null : parseInt(value);
+    setCustomToken({...customToken, decimals: decimals});
+  };
+
   const handleCustomTokenSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSelectToken(customToken, customToken.policyId);
+    const submittedToken = {
+      ...customToken,
+      decimals: customToken.decimals === null ? 0 : customToken.decimals
+    };
+    onSelectToken(submittedToken, submittedToken.policyId);
     onClose();
   };
 
@@ -100,12 +110,10 @@ const TokenSelectModal: React.FC<TokenSelectModalProps> = ({
           <>
             <input
               type="text"
-              placeholder="Search"
+              placeholder="Search tokens"
               onChange={(e) => debouncedSetSearch(e.target.value)}
+              className="searchInput"
             />
-            <button className="customTokenButton" onClick={() => setShowCustomForm(true)}>
-              Enter Custom Token
-            </button>
             <div className="tokenListContainer" onScroll={handleScroll}>
               {tokens.map((token) => (
                 <button className="tokenButton" key={token.policyId + token.hexName} onClick={() => onSelectToken(token, token.policyId)}>
@@ -116,8 +124,11 @@ const TokenSelectModal: React.FC<TokenSelectModalProps> = ({
                   </div>
                 </button>
               ))}
-              {loading && <p>Loading...</p>}
+              {loading && <p className="loadingText">Loading...</p>}
             </div>
+            <button className="customTokenButton" onClick={() => setShowCustomForm(true)}>
+              Enter Custom Token
+            </button>
           </>
         ) : (
           <form className="customTokenForm" onSubmit={handleCustomTokenSubmit}>
@@ -149,13 +160,16 @@ const TokenSelectModal: React.FC<TokenSelectModalProps> = ({
               onChange={(e) => setCustomToken({...customToken, fullName: e.target.value})}
               required
             />
-            <input
-              type="number"
-              placeholder="Decimals"
-              value={customToken.decimals}
-              onChange={(e) => setCustomToken({...customToken, decimals: parseInt(e.target.value)})}
-              required
-            />
+            <div className="inputGroup">
+              <input
+                type="number"
+                placeholder="Decimals"
+                value={customToken.decimals === null ? '' : customToken.decimals}
+                onChange={handleDecimalsChange}
+                min="0"
+                required
+             />
+            </div>
             <div className="customTokenFormButtons">
               <button type="submit">Add Custom Token</button>
               <button type="button" onClick={() => setShowCustomForm(false)}>Cancel</button>

@@ -1,46 +1,71 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './swap.css';
-import supportedTokens from './supportedTokens.json';
 import WalletPicker from './WalletPicker';
 import "./WalletPicker.css";
 import { formatDisplay } from './utils/formatters';
-import {Lucid , WalletApi} from 'lucid-cardano';
+import { Lucid, WalletApi as LucidWalletApi, TxComplete, C } from 'lucid-cardano';
 import debounce from 'lodash/debounce';
 import SwapIcon from './SwapIcon';
+import TokenSelectModal from './TokenSelectModal';
+import { TokenData } from './types';
 
-interface Token {
-  name: string;
-  icon: string;
-  fullName: string;
-  policy?: string;
-  hexName?: string;
-  decimals: number;
+interface TokenInfo extends TokenData {
+  policy: string;
+}
+
+interface ExtendedWalletApi extends LucidWalletApi {
+  cip106?: {
+    getScript: () => Promise<string>;
+    getScriptRequirements: () => Promise<object[]>;
+    submitUnsignedTx: (tx: string) => Promise<string>;
+  };
+}
+
+
+
+function toHexString(name: string) {
+    // return the hex string of the name
+    return Array.from(new TextEncoder().encode(name))
+      .map(byte => byte.toString(16).padStart(2, '0'))
+      .join('');
+}
+
+const ADA : TokenInfo = {
+  "policy": '',
+  "project": "",
+  "categories": [    ],
+  "socialLinks": {
+    "website": "https://cardano.com/",
+  },
+  "decimals": 6
 }
 
 const Swap = () => {
   const [sellAmount, setSellAmount] = useState<number | null>(null);
   const [buyAmount, setBuyAmount] = useState<number | null>(null);
-  const [sellCurrency, setSellCurrency] = useState<Token>({ 
-    name: 'ADA', 
-    icon: '🔷', 
-    fullName: 'Cardano',
-    policy: '',
-    hexName: '',
-    decimals: 6
-  });
-  const [buyCurrency, setBuyCurrency] = useState<Token>(    {
-    "name": "HOSKY",
-    "policy": "a0028f350aaabe0545fdcb56b039bfb08e4bb4d8c4d7c3c7d481c235",
-    "fullName": "HOSKY Token",
-    "icon": "🐶",
-    "hexName": "484f534b59",
+  const [sellCurrency, setSellCurrency] = useState<TokenInfo>({
+    policy: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
+    "project": "MIN",
+    "categories": [
+      "Meme"
+    ],
+    "socialLinks": {
+      "website": "https://hosky.io",
+      "twitter": "http://twitter.com/hoskytoken",
+      "discord": "http://discord.gg/hosky",
+      "telegram": "https://t.me/hosky_discussion",
+      "coinMarketCap": "https://coinmarketcap.com/currencies/hosky-token/",
+      "coinGecko": "https://www.coingecko.com/en/coins/hosky"
+    },
     "decimals": 0
-},);
+  });
+  
+  const [buyCurrency, setBuyCurrency] = useState<TokenInfo>(ADA);
+
   const [isModalOpen, setIsModalOpen] = useState<'sell' | 'buy' | null>(null);
   const [walletModalOpen, setWalletModalOpen] = useState(false);
-  const [tokenList, setTokenList] = useState(supportedTokens);
   const [wallet, setWallet] = useState<string | undefined>(undefined);
-  const [walletApi, setWalletApi] = useState<WalletApi | undefined>(undefined);
+  const [walletApi, setWalletApi] = useState<ExtendedWalletApi | undefined>(undefined);
   const [sellBalance, setSellBalance] = useState<number | null>(null);
   const [buyBalance, setBuyBalance] = useState<number | null>(null);
   const [orderType, setOrderType] = useState<'market' | 'limit'>('market');
@@ -51,14 +76,13 @@ const Swap = () => {
 
   useEffect(() => {
     if (walletApi && sellCurrency) {
+      setSellBalance(null);
       const fetchBalance = async () => {
         try {
-          const walletCips = window.cardano[wallet].supportedExtensions;
-          const walletApiInstance = await window.cardano[wallet].enable(walletCips);
           const hexEncodedBalance = await walletApi.getBalance();
           console.log('Hex encoded CBOR balance:', hexEncodedBalance);
           const lucid = await Lucid.new(undefined, 'Mainnet');
-          lucid.selectWallet(walletApiInstance);
+          lucid.selectWallet(walletApi);
           console.log(await lucid.wallet.address());
 
           
@@ -66,10 +90,10 @@ const Swap = () => {
           console.log(utxos); 
           let balance = 0n;
           for (const utxo of utxos) {
-            if(sellCurrency.policy === '' && sellCurrency.hexName === ''){
+            if(sellCurrency.policy === '' && toHexString(sellCurrency.project) === ''){
               balance += utxo.assets['lovelace'];
             }else{
-              balance += utxo.assets[sellCurrency.policy+sellCurrency.hexName] ? utxo.assets[sellCurrency.policy+sellCurrency.hexName] : 0n;
+              balance += utxo.assets[sellCurrency.policy+toHexString(sellCurrency.project)] ? utxo.assets[sellCurrency.policy+toHexString(sellCurrency.project)] : 0n;
             }
           }
           setSellBalance(Number(balance));
@@ -85,6 +109,7 @@ const Swap = () => {
 
   useEffect(() => {
     if (walletApi && buyCurrency) {
+      setBuyBalance(null);
       const fetchBalance = async () => {
         try {
           const walletCips = window.cardano[wallet].supportedExtensions;
@@ -99,10 +124,10 @@ const Swap = () => {
           console.log(utxos); 
           let balance = 0n;
           for (const utxo of utxos) {
-            if(buyCurrency.policy === '' && buyCurrency.hexName === ''){
+            if(buyCurrency.policy === '' && toHexString(buyCurrency.project) === ''){
               balance += utxo.assets['lovelace'];
             }else{
-              balance += utxo.assets[buyCurrency.policy+buyCurrency.hexName] ? utxo.assets[buyCurrency.policy+buyCurrency.hexName] : 0n;
+              balance += utxo.assets[buyCurrency.policy+toHexString(buyCurrency.project)] ? utxo.assets[buyCurrency.policy+toHexString(buyCurrency.project)] : 0n;
             }
           }
           setBuyBalance(Number(balance));
@@ -119,11 +144,11 @@ const Swap = () => {
   const fetchCurrentPrice = async () => {
     try {
       // Find the currency that is not ADA
-      const nonAdaCurrency = sellCurrency.policy === '' && sellCurrency.hexName === '' ? buyCurrency : sellCurrency;
+      const nonAdaCurrency = sellCurrency.policy === '' && toHexString(sellCurrency.project) === '' ? buyCurrency : sellCurrency;
 
       // Populate new constants with the policyId and hexName
       const nonAdaPolicyId = nonAdaCurrency.policy;
-      const nonAdaHexName = nonAdaCurrency.hexName;
+      const nonAdaHexName = toHexString(nonAdaCurrency.project);
       const response = await fetch(`http://localhost:3000/api/asset-price?policyId=${nonAdaPolicyId}&tokenName=${nonAdaHexName}`);
       if (!response.ok) {
         throw new Error('Network response was not ok');
@@ -157,9 +182,9 @@ const Swap = () => {
         const queryParams = new URLSearchParams({
           amountIn: sellAmount.toString(),
           assetAPolicyId: sellCurrency.policy || '',
-          assetATokenName: sellCurrency.hexName || '',
+          assetATokenName: toHexString(sellCurrency.project) || '',
           assetBPolicyId: buyCurrency.policy || '',
-          assetBTokenName: buyCurrency.hexName || '',
+          assetBTokenName: toHexString(buyCurrency.project) || '',
         });
 
         const response = await fetch(`http://localhost:3000/api/calculateOut?${queryParams}`, {
@@ -196,69 +221,41 @@ const Swap = () => {
     };
   }, [sellAmount, sellCurrency, buyCurrency, debouncedCalculateBuyAmount]);
 
-  const handleCurrencyChange = (newCurrency: Token, type: 'sell' | 'buy') => {
-    const ADA: Token = { 
-      name: 'ADA', 
-      icon: '🔷', 
-      fullName: 'Cardano',
-      policy: '',
-      hexName: '',
-      decimals: 6
+  const handleCurrencyChange = (newCurrency: TokenData, policy: string, type: 'sell' | 'buy') => {
+    const newCurrencyInfo: TokenInfo = {
+      ...newCurrency,
+      policy: policy
     };
-
+  
     if (type === 'sell') {
-      if (newCurrency.name === 'ADA') {
+      if (newCurrencyInfo.policy === '') {
         // If selecting ADA on sell side, swap with buy side if it's also ADA
-        if (buyCurrency.name === 'ADA') {
+        if (buyCurrency.policy === '') {
           setBuyCurrency(sellCurrency);
         }
-        setSellCurrency(newCurrency);
+        setSellCurrency(newCurrencyInfo);
       } else {
         // If selecting a token on sell side, set buy side to ADA
-        setSellCurrency(newCurrency);
+        setSellCurrency(newCurrencyInfo);
         setBuyCurrency(ADA);
       }
     } else { // type === 'buy'
-      if (newCurrency.name === 'ADA') {
+      if (newCurrencyInfo.policy === '') {
         // If selecting ADA on buy side, swap with sell side if it's also ADA
-        if (sellCurrency.name === 'ADA') {
+        if (sellCurrency.policy === '') {
           setSellCurrency(buyCurrency);
         }
-        setBuyCurrency(newCurrency);
+        setBuyCurrency(newCurrencyInfo);
       } else {
         // If selecting a token on buy side, set sell side to ADA
-        setBuyCurrency(newCurrency);
+        setBuyCurrency(newCurrencyInfo);
         setSellCurrency(ADA);
       }
     }
     setIsModalOpen(null);
   };
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setIsModalOpen(null);
-      }
-    };
 
-    document.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, []);
-
-  useEffect(() => {
-    setTokenList(supportedTokens);
-  }, [isModalOpen]);
-
-  const filterTokenList = (search: string) => {
-    const filteredTokens = supportedTokens.filter((token) =>
-      token.name.toLowerCase().includes(search.toLowerCase()) ||
-      token.fullName.toLowerCase().includes(search.toLowerCase())
-    );
-    setTokenList(filteredTokens);
-  };
 
   const swapCurrencies = () => {
     const tempCurrency = sellCurrency;
@@ -274,27 +271,6 @@ const Swap = () => {
       setCurrentMarketPrice(newMarketPrice);
       setLimitPrice(newMarketPrice);
     }
-  };
-
-  const modal = () => {
-    return (
-      <div className="modal" onClick={() => setIsModalOpen(null)}>
-        <div className="modalContent" onClick={(e) => e.stopPropagation()}>
-          <h2>Select Currency</h2>
-          <input
-            type="text"
-            placeholder="Search"
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => filterTokenList(event.target.value)}
-          />
-          {tokenList.map((token) => (
-            <button key={token.name} onClick={() => handleCurrencyChange(token, isModalOpen!)}>
-              {token.icon} {token.name} - {token.fullName}
-            </button>
-          ))}
-          <button onClick={() => setIsModalOpen(null)}>Close</button>
-        </div>
-      </div>
-    );
   };
 
   const currencyInput = (type: 'sell' | 'buy') => {
@@ -324,11 +300,11 @@ const Swap = () => {
             }}
           />
           <div onClick={() => setIsModalOpen(type)} className='currencyButton'>
-            {currency.icon} {currency.name} ▼
+            <img src={`/assets/${currency.project}_${currency.policy }.png`} alt={currency.project} style={{width: '20px', height: '20px', marginRight: '5px'}} /> {currency.project} ▼
           </div>
         </div>
         <div className="inputDetails">
-          <span>{currency.fullName}</span>
+          <span>{currency.policy === '' ? 'ADA' : currency.project}</span>
           {type === 'sell' && balance !== null && balance > 0 && (
             <div className="balanceSlider">
               <input
@@ -362,9 +338,85 @@ const Swap = () => {
     });
   };
 
+  const createSwap = async () => {
+
+    if (!wallet || !walletApi) {
+      console.warn('Wallet not connected');
+      alert('Please connect your wallet before creating a swap.');
+      return;
+    }
+    let script = null;
+    let scriptRequirements = [];
+    try {
+      const lucid = await Lucid.new(undefined, 'Mainnet');
+      lucid.selectWallet(walletApi);
+      const address =await  lucid.wallet.address()
+      const utxos = (await lucid.wallet.getUtxos()).map(utxo => ({
+        ...utxo,
+        assets: Object.fromEntries(
+          Object.entries(utxo.assets).map(([key, value]) => [key, Number(value)])
+        )
+      }));
+
+      if( wallet && walletApi?.cip106 ){
+  
+        
+        script  = await walletApi.cip106.getScript();
+        scriptRequirements = await walletApi.cip106.getScriptRequirements();
+        }
+
+      const response = await fetch('http://localhost:3000/api/swap', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          assetInPolicyId: sellCurrency.policy,
+          assetInTokenName: toHexString(sellCurrency.project),
+          assetOutPolicyId: buyCurrency.policy,
+          assetOutTokenName: toHexString(buyCurrency.project),
+          utxos: utxos,
+          amountIn: sellAmount?.toString() || '0',
+          slippage: slippage.toString(),
+          address: address,
+          script,
+          scriptRequirements,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create swap transaction');
+      }
+
+      const data = await response.json();
+      console.log('Swap transaction created:', data);
+
+      // Here you would ty
+      const txCborBuffer = new Uint8Array(data.txCbor.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+      const transaction = new TxComplete(lucid, C.Transaction.from_bytes(txCborBuffer));
+      if(walletApi.cip106){
+        const txHash = await walletApi.cip106.submitUnsignedTx(data.txCbor);
+        console.log('Transaction submitted:', txHash);
+        
+      }else{
+        const signature = await walletApi.signTx(data.txCbor, false);
+        const txSigned = await transaction.assemble([signature]).complete()
+        const txHash = await walletApi.submitTx(txSigned.toString());
+        console.log('Transaction submitted:', txHash);
+      }
+      alert('Swap transaction submitted successfully!');
+
+    } catch (error) {
+      console.error('Error creating swap:', error);
+      alert('Error creating swap. Please try again.');
+    }
+  };
+
   const disconnectWallet = () => {
     setWallet(undefined);
     setWalletApi(undefined);
+    setSellBalance(null);
+    setBuyBalance(null);
   };
 
   const renderOrderTypeControls = () => {
@@ -477,9 +529,13 @@ const Swap = () => {
         {currencyInput('buy')}
       </div>
 
-      <button className="swapButton">Swap</button>
+      <button className="swapButton" disabled={sellAmount === null || buyAmount === null || sellAmount === 0 || buyAmount === 0} onClick={() => createSwap()}>Swap</button>
 
-      {isModalOpen && modal()}
+      <TokenSelectModal
+        isOpen={isModalOpen !== null}
+        onClose={() => setIsModalOpen(null)}
+        onSelectToken={(token, policy) => handleCurrencyChange(token , policy,  isModalOpen!)}
+      />
       {walletModalOpen && WalletPicker({ setOpenModal: setWalletModalOpen, operation: connectWallet })}
     </div>
   );

@@ -9,9 +9,7 @@ import SwapIcon from './SwapIcon';
 import TokenSelectModal from './TokenSelectModal';
 import { TokenData } from './types';
 
-interface TokenInfo extends TokenData {
-  policy: string;
-}
+const backendUrl = 'http://localhost:3000';
 
 interface ExtendedWalletApi extends LucidWalletApi {
   cip106?: {
@@ -23,171 +21,89 @@ interface ExtendedWalletApi extends LucidWalletApi {
 
 
 
-function toHexString(name: string) {
-    // return the hex string of the name
-    return Array.from(new TextEncoder().encode(name))
-      .map(byte => byte.toString(16).padStart(2, '0'))
-      .join('');
-}
 
-const ADA : TokenInfo = {
-  "policy": '',
-  "project": "",
-  "categories": [    ],
-  "socialLinks": {
-    "website": "https://cardano.com/",
-  },
+const ADA : TokenData = {
+  "policyId": '',
+  "ticker": "ADA",
+  "hexName": "",
+  "fullName" : "Cardano",
   "decimals": 6
 }
 
 const Swap = () => {
   const [sellAmount, setSellAmount] = useState<number | null>(null);
   const [buyAmount, setBuyAmount] = useState<number | null>(null);
-  const [sellCurrency, setSellCurrency] = useState<TokenInfo>({
-    policy: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
-    "project": "MIN",
-    "categories": [
-      "Meme"
-    ],
-    "socialLinks": {
-      "website": "https://hosky.io",
-      "twitter": "http://twitter.com/hoskytoken",
-      "discord": "http://discord.gg/hosky",
-      "telegram": "https://t.me/hosky_discussion",
-      "coinMarketCap": "https://coinmarketcap.com/currencies/hosky-token/",
-      "coinGecko": "https://www.coingecko.com/en/coins/hosky"
-    },
+  const [sellCurrency, setSellCurrency] = useState<TokenData>({
+    policyId: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
+    "ticker": "MIN",
+    "hexName": "4d494e",
+    "fullName" : "Minswap",
     "decimals": 0
   });
   
-  const [buyCurrency, setBuyCurrency] = useState<TokenInfo>(ADA);
+  const [buyCurrency, setBuyCurrency] = useState<TokenData>(ADA);
 
   const [isModalOpen, setIsModalOpen] = useState<'sell' | 'buy' | null>(null);
   const [walletModalOpen, setWalletModalOpen] = useState(false);
   const [wallet, setWallet] = useState<string | undefined>(undefined);
   const [walletApi, setWalletApi] = useState<ExtendedWalletApi | undefined>(undefined);
-  const [sellBalance, setSellBalance] = useState<number | null>(null);
-  const [buyBalance, setBuyBalance] = useState<number | null>(null);
-  const [orderType, setOrderType] = useState<'market' | 'limit'>('market');
+  // const [orderType, setOrderType] = useState<'market' | 'limit'>('market');
   const [slippage, setSlippage] = useState<number>(1);
-  const [limitPrice, setLimitPrice] = useState<number | null>(null);
+  // const [limitPrice, setLimitPrice] = useState<number | null>(null);
   const [customSlippage, setCustomSlippage] = useState<string>('');
-  const [currentMarketPrice, setCurrentMarketPrice] = useState<number | null>(null);
+  // const [currentMarketPrice, setCurrentMarketPrice] = useState<number | null>(null);
+  const [userBalances, setUserBalances] = useState<Record<string, number>>({});
 
-  useEffect(() => {
-    if (walletApi && sellCurrency) {
-      setSellBalance(null);
-      const fetchBalance = async () => {
-        try {
-          const hexEncodedBalance = await walletApi.getBalance();
-          console.log('Hex encoded CBOR balance:', hexEncodedBalance);
-          const lucid = await Lucid.new(undefined, 'Mainnet');
-          lucid.selectWallet(walletApi);
-          console.log(await lucid.wallet.address());
 
-          
-          const utxos = await lucid.wallet.getUtxos();
-          console.log(utxos); 
-          let balance = 0n;
-          for (const utxo of utxos) {
-            if(sellCurrency.policy === '' && toHexString(sellCurrency.project) === ''){
-              balance += utxo.assets['lovelace'];
-            }else{
-              balance += utxo.assets[sellCurrency.policy+toHexString(sellCurrency.project)] ? utxo.assets[sellCurrency.policy+toHexString(sellCurrency.project)] : 0n;
-            }
-          }
-          setSellBalance(Number(balance));
-        } catch (error) {
-          console.error('Error fetching balance:', error);
-          setSellBalance(null);
-        }
-      };
 
-      fetchBalance();
-    }
-  }, [walletApi, sellCurrency, wallet]); // Added 'wallet' to the dependency array
 
-  useEffect(() => {
-    if (walletApi && buyCurrency) {
-      setBuyBalance(null);
-      const fetchBalance = async () => {
-        try {
-          const walletCips = window.cardano[wallet].supportedExtensions;
-          const walletApiInstance = await window.cardano[wallet].enable(walletCips);
-          const hexEncodedBalance = await walletApi.getBalance();
-          console.log('Hex encoded CBOR balance:', hexEncodedBalance);
-          const lucid = await Lucid.new(undefined, 'Mainnet');
-          lucid.selectWallet(walletApiInstance);
-          console.log(await lucid.wallet.address());
+  // const fetchCurrentPrice = async () => {
+  //   try {
+  //     // Find the currency that is not ADA
+  //     const nonAdaCurrency = sellCurrency.policyId === '' && sellCurrency.hexName === '' ? buyCurrency : sellCurrency;
 
-          const utxos = await lucid.wallet.getUtxos();
-          console.log(utxos); 
-          let balance = 0n;
-          for (const utxo of utxos) {
-            if(buyCurrency.policy === '' && toHexString(buyCurrency.project) === ''){
-              balance += utxo.assets['lovelace'];
-            }else{
-              balance += utxo.assets[buyCurrency.policy+toHexString(buyCurrency.project)] ? utxo.assets[buyCurrency.policy+toHexString(buyCurrency.project)] : 0n;
-            }
-          }
-          setBuyBalance(Number(balance));
-        } catch (error) {
-          console.error('Error fetching balance:', error);
-          setBuyBalance(null);
-        }
-      };
+  //     // Populate new constants with the policyId and hexName
+  //     const nonAdaPolicyId = nonAdaCurrency.policyId;
+  //     const nonAdaHexName =  nonAdaCurrency.hexName;
+  //     const response = await fetch(`${backendUrl}/api/asset-price?policyId=${nonAdaPolicyId}&tokenName=${nonAdaHexName}`);
+  //     if (!response.ok) {
+  //       throw new Error('Network response was not ok');
+  //     }
+  //     const data = await response.json();
+  //     setCurrentMarketPrice(data.price);
+  //     setLimitPrice(data.price); // Set the limit price to the current market price initially
+  //   } catch (error) {
+  //     console.error('Error fetching current price:', error);
+  //     setCurrentMarketPrice(null);
+  //   }
+  // };
 
-      fetchBalance();
-    }
-  }, [walletApi, buyCurrency, wallet]); // Added 'wallet' to the dependency array
+  // const handleOrderTypeChange = (type: 'market' | 'limit') => {
+  //   setOrderType(type);
+  //   if (type === 'limit') {
+  //     fetchCurrentPrice();
+  //   }
+  // };
 
-  const fetchCurrentPrice = async () => {
-    try {
-      // Find the currency that is not ADA
-      const nonAdaCurrency = sellCurrency.policy === '' && toHexString(sellCurrency.project) === '' ? buyCurrency : sellCurrency;
-
-      // Populate new constants with the policyId and hexName
-      const nonAdaPolicyId = nonAdaCurrency.policy;
-      const nonAdaHexName = toHexString(nonAdaCurrency.project);
-      const response = await fetch(`http://localhost:3000/api/asset-price?policyId=${nonAdaPolicyId}&tokenName=${nonAdaHexName}`);
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      const data = await response.json();
-      setCurrentMarketPrice(data.price);
-      setLimitPrice(data.price); // Set the limit price to the current market price initially
-    } catch (error) {
-      console.error('Error fetching current price:', error);
-      setCurrentMarketPrice(null);
-    }
-  };
-
-  const handleOrderTypeChange = (type: 'market' | 'limit') => {
-    setOrderType(type);
-    if (type === 'limit') {
-      fetchCurrentPrice();
-    }
-  };
-
-  const adjustLimitPrice = (adjustment: number) => {
-    if (currentMarketPrice !== null ) {
-      const newPrice = currentMarketPrice * (1 + adjustment);
-      setLimitPrice(Number(newPrice));
-    }
-  };
+  // const adjustLimitPrice = (adjustment: number) => {
+  //   if (currentMarketPrice !== null ) {
+  //     const newPrice = currentMarketPrice * (1 + adjustment);
+  //     setLimitPrice(Number(newPrice));
+  //   }
+  // };
 
   const calculateBuyAmount = useCallback(async () => {
     if (sellAmount && sellCurrency && buyCurrency) {
       try {
         const queryParams = new URLSearchParams({
           amountIn: sellAmount.toString(),
-          assetAPolicyId: sellCurrency.policy || '',
-          assetATokenName: toHexString(sellCurrency.project) || '',
-          assetBPolicyId: buyCurrency.policy || '',
-          assetBTokenName: toHexString(buyCurrency.project) || '',
+          assetAPolicyId: sellCurrency.policyId || '',
+          assetATokenName: sellCurrency.hexName || '',
+          assetBPolicyId: buyCurrency.policyId || '',
+          assetBTokenName: buyCurrency.hexName || '',
         });
 
-        const response = await fetch(`http://localhost:3000/api/calculateOut?${queryParams}`, {
+        const response = await fetch(`${backendUrl}/api/calculateOut?${queryParams}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -222,15 +138,15 @@ const Swap = () => {
   }, [sellAmount, sellCurrency, buyCurrency, debouncedCalculateBuyAmount]);
 
   const handleCurrencyChange = (newCurrency: TokenData, policy: string, type: 'sell' | 'buy') => {
-    const newCurrencyInfo: TokenInfo = {
+    const newCurrencyInfo: TokenData = {
       ...newCurrency,
-      policy: policy
+      policyId: policy
     };
   
     if (type === 'sell') {
-      if (newCurrencyInfo.policy === '') {
+      if (newCurrencyInfo.policyId === '') {
         // If selecting ADA on sell side, swap with buy side if it's also ADA
-        if (buyCurrency.policy === '') {
+        if (buyCurrency.policyId === '') {
           setBuyCurrency(sellCurrency);
         }
         setSellCurrency(newCurrencyInfo);
@@ -240,9 +156,9 @@ const Swap = () => {
         setBuyCurrency(ADA);
       }
     } else { // type === 'buy'
-      if (newCurrencyInfo.policy === '') {
+      if (newCurrencyInfo.policyId === '') {
         // If selecting ADA on buy side, swap with sell side if it's also ADA
-        if (sellCurrency.policy === '') {
+        if (sellCurrency.policyId === '') {
           setSellCurrency(buyCurrency);
         }
         setBuyCurrency(newCurrencyInfo);
@@ -266,20 +182,21 @@ const Swap = () => {
     setSellAmount(buyAmount);
     setBuyAmount(tempAmount);
     // Update market price and limit price when swapping currencies
-    if (orderType === 'limit' && currentMarketPrice !== null) {
-      const newMarketPrice = 1 / currentMarketPrice;
-      setCurrentMarketPrice(newMarketPrice);
-      setLimitPrice(newMarketPrice);
-    }
+    // if (orderType === 'limit' && currentMarketPrice !== null) {
+    //   const newMarketPrice = 1 / currentMarketPrice;
+    //   setCurrentMarketPrice(newMarketPrice);
+    //   setLimitPrice(newMarketPrice);
+    // }
   };
 
   const currencyInput = (type: 'sell' | 'buy') => {
     const amount = type === 'sell' ? sellAmount : buyAmount;
     const setAmount = type === 'sell' ? setSellAmount : setBuyAmount;
     const currency = type === 'sell' ? sellCurrency : buyCurrency;
-    const balance =  type === 'sell' ? sellBalance : buyBalance;  
+    const currencyName = currency.policyId === '' ? 'lovelace' : currency.policyId + currency.hexName;
+    const balance = userBalances[currencyName]
 
-    
+  
     return (
       <div className="currencyInput">
         <div className="inputLabel">{type === 'sell' ? 'You sell' : 'You buy'}</div>
@@ -300,11 +217,11 @@ const Swap = () => {
             }}
           />
           <div onClick={() => setIsModalOpen(type)} className='currencyButton'>
-            <img src={`/assets/${currency.project}_${currency.policy }.png`} alt={currency.project} style={{width: '20px', height: '20px', marginRight: '5px'}} /> {currency.project} ▼
+            <img src={`${backendUrl}/assets/${currency.policyId}${currency.hexName}.png`} alt={currency.fullName} style={{width: '20px', height: '20px', marginRight: '5px'}} /> {currency.fullName} ▼
           </div>
         </div>
         <div className="inputDetails">
-          <span>{currency.policy === '' ? 'ADA' : currency.project}</span>
+          <span>{currency.policyId === '' ? 'ADA' : currency.fullName}</span>
           {type === 'sell' && balance !== null && balance > 0 && (
             <div className="balanceSlider">
               <input
@@ -321,7 +238,7 @@ const Swap = () => {
               <span>{sellAmount !== null ? ((sellAmount / balance) * 100).toFixed(2) : '0'}%</span>
             </div>
           )}
-          {balance !== null && <span>Balance: {formatDisplay(balance, currency.decimals)}</span>}
+          {balance && <span>Balance: {formatDisplay(balance, currency.decimals)}</span>}
         </div>
       </div>
     );
@@ -334,9 +251,29 @@ const Swap = () => {
     window.cardano[wallet].enable(walletCips).then((api) => {
       setWallet(wallet);
       setWalletApi(api);
+      getUserBalances(api);
       console.log(walletApi);
     });
   };
+
+  
+
+  const getUserBalances = async (walletApi) => {
+
+    const lucid = await Lucid.new(undefined, 'Mainnet');
+    lucid.selectWallet(walletApi);
+    const utxos = await lucid.wallet.getUtxos();
+    console.log(utxos); 
+    const userBalances = utxos.reduce((acc, utxo) => {
+      Object.entries(utxo.assets).forEach(([policyId, amount]) => {
+        const key = policyId || 'lovelace';  // Use 'lovelace' for ADA
+        acc[key] = (acc[key] || 0) + Number(amount);
+      });
+      return acc;
+    }, {});
+    setUserBalances(userBalances);
+    console.log(userBalances);
+  }
 
   const createSwap = async () => {
 
@@ -365,16 +302,16 @@ const Swap = () => {
         scriptRequirements = await walletApi.cip106.getScriptRequirements();
         }
 
-      const response = await fetch('http://localhost:3000/api/swap', {
+      const response = await fetch(`${backendUrl}/api/swap`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          assetInPolicyId: sellCurrency.policy,
-          assetInTokenName: toHexString(sellCurrency.project),
-          assetOutPolicyId: buyCurrency.policy,
-          assetOutTokenName: toHexString(buyCurrency.project),
+          assetInPolicyId: sellCurrency.policyId,
+          assetInTokenName: sellCurrency.hexName,
+          assetOutPolicyId: buyCurrency.policyId,
+          assetOutTokenName: buyCurrency.hexName,
           utxos: utxos,
           amountIn: sellAmount?.toString() || '0',
           slippage: slippage.toString(),
@@ -415,12 +352,11 @@ const Swap = () => {
   const disconnectWallet = () => {
     setWallet(undefined);
     setWalletApi(undefined);
-    setSellBalance(null);
-    setBuyBalance(null);
   };
 
   const renderOrderTypeControls = () => {
-    if (orderType === 'market') {
+    // if (orderType === 'market') 
+    {
       return (
         <div className="slippageControl">
           <label>Slippage Tolerance:</label>
@@ -466,30 +402,40 @@ const Swap = () => {
   };
 
   const renderLimitPriceControl = () => {
-    if (orderType === 'limit') {
-      return (
-        <div className="limitPriceControl">
-          <label>Limit Price:</label>
-          <input
-            type="number"
-            placeholder="Enter limit price"
-            value={limitPrice?  Number(limitPrice).toLocaleString('fullwide', { useGrouping: false, maximumFractionDigits: 40 }) : ''}
-            onChange={(e) => {    setLimitPrice(Number(e.target.value))}}
-          />
-          <div className="priceAdjustButtons">
-            <button onClick={() => adjustLimitPrice(-0.1)}>-10%</button>
-            <button onClick={() => adjustLimitPrice(-0.05)}>-5%</button>
-            <button onClick={() => adjustLimitPrice(-0.01)}>-1%</button>
-            <button onClick={() => setLimitPrice(currentMarketPrice)}>Reset</button>
-            <button onClick={() => adjustLimitPrice(0.01)}>+1%</button>
-            <button onClick={() => adjustLimitPrice(0.05)}>+5%</button>
-            <button onClick={() => adjustLimitPrice(0.1)}>+10%</button>
-          </div>
-        </div>
-      );
-    }
+    // if (orderType === 'limit') {
+    //   return (
+    //     <div className="limitPriceControl">
+    //       <label>Limit Price:</label>
+    //       <input
+    //         type="number"
+    //         placeholder="Enter limit price"
+    //         value={limitPrice?  Number(limitPrice).toLocaleString('fullwide', { useGrouping: false, maximumFractionDigits: 40 }) : ''}
+    //         onChange={(e) => {    setLimitPrice(Number(e.target.value))}}
+    //       />
+    //       <div className="priceAdjustButtons">
+    //         <button onClick={() => adjustLimitPrice(-0.1)}>-10%</button>
+    //         <button onClick={() => adjustLimitPrice(-0.05)}>-5%</button>
+    //         <button onClick={() => adjustLimitPrice(-0.01)}>-1%</button>
+    //         <button onClick={() => setLimitPrice(currentMarketPrice)}>Reset</button>
+    //         <button onClick={() => adjustLimitPrice(0.01)}>+1%</button>
+    //         <button onClick={() => adjustLimitPrice(0.05)}>+5%</button>
+    //         <button onClick={() => adjustLimitPrice(0.1)}>+10%</button>
+    //       </div>
+    //     </div>
+    //   );
+    // }
     return null;
   };
+
+  useEffect(() => {
+    if (wallet && walletApi) {
+      const intervalId = setInterval(() => {
+        getUserBalances(walletApi);
+      }, 30000);
+
+      return () => clearInterval(intervalId);
+    }
+  }, [wallet, walletApi]);
 
   return (
     <div className="swapContainer">
@@ -501,7 +447,7 @@ const Swap = () => {
         <button className="walletPickerButton" onClick={() => setWalletModalOpen(true)}>Select Wallet</button>
       }
       
-      <div className="orderTypeSelector">
+      {/* <div className="orderTypeSelector">
         <button
           className={`orderTypeButton ${orderType === 'market' ? 'active' : ''}`}
           onClick={() => handleOrderTypeChange('market')}
@@ -514,7 +460,7 @@ const Swap = () => {
         >
           Limit
         </button>
-      </div>
+      </div> */}
       
       <div className="orderControls">
         {renderOrderTypeControls()}

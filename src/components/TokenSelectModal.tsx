@@ -22,24 +22,29 @@ const TokenSelectModal: React.FC<TokenSelectModalProps> = ({
   const [hasMore, setHasMore] = useState(true);
   const itemsPerPage = 20;
 
-  const fetchTokens = useCallback(async () => {
+  const fetchTokens = useCallback(() => {
+    console.log('fetchTokens', search, page, hasMore, loading);
     if (!hasMore || loading) return;
     setLoading(true);
     try {
-      const response = await fetch(`${backendUrl}/api/verified-tokens?search=${search}&page=${page}&pagination=${itemsPerPage}`);
-      const data = await response.json();
-      if (data.tokens.length < itemsPerPage) {
+      fetch(`${backendUrl}/api/verified-tokens?search=${search}&page=${page}&pagination=${itemsPerPage}`).then(res => res.json().then(data => {  
+        if (data.tokens.length < itemsPerPage) {
         setHasMore(false);
       }
-      setTokens(prevTokens => [...prevTokens, ...data.tokens]);
+      setTokens([...tokens, ...data.tokens]);
       setPage(prevPage => prevPage + 1);
+      setTimeout(() => {
+        setLoading(false);
+      }, 500);
+    }));
     } catch (error) {
       console.error('Error fetching tokens:', error);
-    }
-    setLoading(false);
-  }, [search, page, hasMore, loading]);
+      setLoading(false);
+    }   
+  }, [search, page, hasMore, tokens,loading]); // Add dependency array here
 
   useEffect(() => {
+    console.log('useEffect', isOpen);
     if (isOpen) {
       setTokens([]);
       setPage(1);
@@ -48,10 +53,10 @@ const TokenSelectModal: React.FC<TokenSelectModalProps> = ({
   }, [isOpen]);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && tokens.length === 0) {
       fetchTokens();
     }
-  }, [isOpen, search, page, fetchTokens]);
+  }, [isOpen, tokens.length, fetchTokens]);
 
   const debouncedSetSearch = useMemo(
     () => debounce((value: string) => {
@@ -73,14 +78,14 @@ const TokenSelectModal: React.FC<TokenSelectModalProps> = ({
   if (!isOpen) return null;
   return (
     <div className="modal" onClick={onClose}>
-      <div className="modalContent" onClick={(e) => e.stopPropagation()} onScroll={handleScroll}>
+      <div className="modalContent" onClick={(e) => e.stopPropagation()} >
         <h2>Select Currency</h2>
         <input
           type="text"
           placeholder="Search"
           onChange={(e) => debouncedSetSearch(e.target.value)}
         />
-        <div style={{maxHeight: '400px', overflowY: 'auto'}}>
+        <div style={{maxHeight: '400px', overflowY: 'auto'}} onScroll={handleScroll}>
           {tokens.map((token) => (
             <button key={token.policyId + token.hexName} onClick={() => onSelectToken(token, token.policyId)}>
               <img src={`${backendUrl}/assets/${token.policyId + token.hexName}.png`} alt={token.fullName} style={{width: '20px', height: '20px', marginRight: '5px'}} />

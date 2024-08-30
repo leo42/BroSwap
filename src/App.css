@@ -95,3 +95,21 @@ body {
   justify-content: center;
   height: 100vh;
 }
+
+.beta-banner {
+  background-color: #ffcc00;
+  color: #333;
+  text-align: center;
+  padding: 10px;
+  font-size: 14px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+.beta-banner a {
+  color: #0066cc;
+  text-decoration: underline;
+}

@@ -17,6 +17,9 @@ function App() {
 
   return (
     <div className='app'>
+      <div className="beta-banner">
+        This is a beta version. By using this app, you agree to our <a href="https://github.com/leo42/broswap/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">license</a>.
+      </div>
       <button className='themeToggleButton' onClick={toggleTheme}>
         {lightMode ? <FaSun /> : <FaMoon />}
       </button>

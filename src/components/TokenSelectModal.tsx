@@ -77,24 +77,28 @@ const TokenSelectModal: React.FC<TokenSelectModalProps> = ({
 
   if (!isOpen) return null;
   return (
-    <div className="modal" onClick={onClose}>
+        <div className="modal" onClick={onClose}>
+        
       <div className="modalContent" onClick={(e) => e.stopPropagation()} >
+      <button className="closeButton" onClick={onClose}>x</button>
         <h2>Select Currency</h2>
         <input
           type="text"
           placeholder="Search"
           onChange={(e) => debouncedSetSearch(e.target.value)}
         />
-        <div style={{maxHeight: '400px', overflowY: 'auto'}} onScroll={handleScroll}>
+        <div className="tokenListContainer" onScroll={handleScroll}>
           {tokens.map((token) => (
-            <button key={token.policyId + token.hexName} onClick={() => onSelectToken(token, token.policyId)}>
-              <img src={`${backendUrl}/assets/${token.policyId + token.hexName}.png`} alt={token.fullName} style={{width: '20px', height: '20px', marginRight: '5px'}} />
-              {token.ticker}
+            <button className="tokenButton" key={token.policyId + token.hexName} onClick={() => onSelectToken(token, token.policyId)}>
+              <img className="tokenImage" src={`${backendUrl}/assets/${token.policyId + token.hexName}.png`} alt={token.fullName} />
+              <div className="tokenInfo">
+                <span className="tokenTicker">{token.ticker}</span>
+                <span className="tokenFullName">{token.fullName}</span>
+              </div>
             </button>
           ))}
           {loading && <p>Loading...</p>}
         </div>
-        <button onClick={onClose}>Close</button>
       </div>
     </div>
   );

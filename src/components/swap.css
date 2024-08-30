@@ -130,10 +130,57 @@
 }
 
 .modalContent {
+  position: relative;
   background: var(--clrModal);
   padding: 20px;
   border-radius: 10px;
   width: 300px;
+}
+
+
+.tokenButton {
+  display: flex;
+  width: 95%;
+  margin-bottom: 10px;
+  background-color: var(--clrSelect);
+  color: var(--clrNavText);
+  padding: 10px 15px;
+  cursor: pointer;
+  font-size: 16px;
+  justify-content: space-between;
+}
+
+.tokenButton > *:first-child,
+.tokenButton > *:last-child {
+  flex: 0 0 auto;
+}
+
+.tokenButton > *:nth-child(2) {
+  flex: 1;
+  text-align: center;
+}
+
+.tokenButton img {
+  width: 50px;
+  height: 50px;
+  margin-right: 10px;
+}
+
+.closeButton {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--clrNavText);
+  cursor: pointer;
+  padding: 0;
+  width: 10px;
+}
+
+.closeButton:hover {
+  color: var(--clrSelect);
 }
 
 .modalContent h2 {
@@ -151,17 +198,6 @@
   color: var(--clrNavText);
 }
 
-.modalContent button {
-  width: 100%;
-  padding: 10px;
-  margin-top: 5px;
-  background-color: var(--clrSelect);
-  color: var(--clrNavText);
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
 
 .modalContent button:hover {
   background-color: var(--clrInputs);
@@ -272,4 +308,48 @@ input[type="number"] {
   padding: 10px;
   border-radius: 5px;
   margin-bottom: 10px;
+}
+
+.tokenListContainer {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.tokenButton {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tokenButton:hover {
+  background-color: var(--clrInputs);
+}
+
+.tokenImage {
+  width: 24px;
+  height: 24px;
+  margin-right: 10px;
+}
+
+.tokenInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+}
+
+.tokenTicker {
+  font-weight: bold;
+  align-self: flex-end;
+}
+
+.tokenFullName {
+  font-size: 0.8em;
+  color: #666;
+  align-self: flex-end;
 }

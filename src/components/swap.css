@@ -134,7 +134,7 @@
   background: var(--clrModal);
   padding: 20px;
   border-radius: 10px;
-  width: 300px;
+  width: 400px;
 }
 
 
@@ -312,7 +312,28 @@ input[type="number"] {
 
 .tokenListContainer {
   max-height: 400px;
+  padding-right: 8px;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--clrSelect) var(--clrInputs);
+}
+
+.tokenListContainer::-webkit-scrollbar {
+  width: 8px;
+}
+
+.tokenListContainer::-webkit-scrollbar-track {
+  background: var(--clrInputs);
+}
+
+.tokenListContainer::-webkit-scrollbar-thumb {
+  background-color: var(--clrSelect);
+  border-radius: 4px;
+  border: 2px solid var(--clrInputs);
+}
+
+.tokenListContainer::-webkit-scrollbar-thumb:hover {
+  background-color: var(--clrNavText);
 }
 
 .tokenButton {
@@ -352,4 +373,94 @@ input[type="number"] {
   font-size: 0.8em;
   color: #666;
   align-self: flex-end;
+}
+
+.customTokenButton {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: var(--clrSelect);
+  color: var(--clrNavText);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.customTokenButton:hover {
+  background-color: var(--clrInputs);
+}
+
+.customTokenForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.customTokenForm input {
+  padding: 10px;
+  background-color: var(--clrInputs);
+  border: none;
+  border-radius: 5px;
+  color: var(--clrNavText);
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.customTokenForm input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+  transition: all 0.3s ease;
+}
+
+.customTokenForm input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+.customTokenForm input:focus::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-5px);
+  font-size: 14px;
+}
+
+/* Styles for number input */
+.customTokenForm input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.customTokenForm input[type="number"]::-webkit-inner-spin-button,
+.customTokenForm input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.customTokenFormButtons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.customTokenFormButtons button {
+  flex: 1;
+  padding: 10px;
+  background-color: var(--clrSelect);
+  color: var(--clrNavText);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.customTokenFormButtons button:hover {
+  background-color: var(--clrInputs);
+}
+
+.customTokenFormButtons button:first-child {
+  margin-right: 5px;
+}
+
+.customTokenFormButtons button:last-child {
+  margin-left: 5px;
 }

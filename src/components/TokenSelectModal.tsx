@@ -20,6 +20,14 @@ const TokenSelectModal: React.FC<TokenSelectModalProps> = ({
   const [tokens, setTokens] = useState<TokenData[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [showCustomForm, setShowCustomForm] = useState(false);
+  const [customToken, setCustomToken] = useState<TokenData>({
+    policyId: '',
+    hexName: '',
+    ticker: '',
+    fullName: '',
+    decimals: 0,
+  });
   const itemsPerPage = 20;
 
   const fetchTokens = useCallback(() => {
@@ -48,6 +56,7 @@ const TokenSelectModal: React.FC<TokenSelectModalProps> = ({
     if (isOpen) {
       setTokens([]);
       setPage(1);
+      setShowCustomForm(false)
       setHasMore(true);
     }
   }, [isOpen]);
@@ -75,30 +84,84 @@ const TokenSelectModal: React.FC<TokenSelectModalProps> = ({
     }
   };
 
+  const handleCustomTokenSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSelectToken(customToken, customToken.policyId);
+    onClose();
+  };
+
   if (!isOpen) return null;
   return (
-        <div className="modal" onClick={onClose}>
-        
-      <div className="modalContent" onClick={(e) => e.stopPropagation()} >
-      <button className="closeButton" onClick={onClose}>x</button>
+    <div className="modal" onClick={onClose}>
+      <div className="modalContent" onClick={(e) => e.stopPropagation()}>
+        <button className="closeButton" onClick={onClose}>x</button>
         <h2>Select Currency</h2>
-        <input
-          type="text"
-          placeholder="Search"
-          onChange={(e) => debouncedSetSearch(e.target.value)}
-        />
-        <div className="tokenListContainer" onScroll={handleScroll}>
-          {tokens.map((token) => (
-            <button className="tokenButton" key={token.policyId + token.hexName} onClick={() => onSelectToken(token, token.policyId)}>
-              <img className="tokenImage" src={`${backendUrl}/assets/${token.policyId + token.hexName}.png`} alt={token.fullName} />
-              <div className="tokenInfo">
-                <span className="tokenTicker">{token.ticker}</span>
-                <span className="tokenFullName">{token.fullName}</span>
-              </div>
+        {!showCustomForm ? (
+          <>
+            <input
+              type="text"
+              placeholder="Search"
+              onChange={(e) => debouncedSetSearch(e.target.value)}
+            />
+            <button className="customTokenButton" onClick={() => setShowCustomForm(true)}>
+              Enter Custom Token
             </button>
-          ))}
-          {loading && <p>Loading...</p>}
-        </div>
+            <div className="tokenListContainer" onScroll={handleScroll}>
+              {tokens.map((token) => (
+                <button className="tokenButton" key={token.policyId + token.hexName} onClick={() => onSelectToken(token, token.policyId)}>
+                  <img className="tokenImage" src={`${backendUrl}/assets/${token.policyId + token.hexName}.png`} alt={token.fullName} />
+                  <div className="tokenInfo">
+                    <span className="tokenTicker">{token.ticker}</span>
+                    <span className="tokenFullName">{token.fullName}</span>
+                  </div>
+                </button>
+              ))}
+              {loading && <p>Loading...</p>}
+            </div>
+          </>
+        ) : (
+          <form className="customTokenForm" onSubmit={handleCustomTokenSubmit}>
+            <input
+              type="text"
+              placeholder="Policy ID"
+              value={customToken.policyId}
+              onChange={(e) => setCustomToken({...customToken, policyId: e.target.value})}
+              required
+            />
+            <input
+              type="text"
+              placeholder="Hex Name"
+              value={customToken.hexName}
+              onChange={(e) => setCustomToken({...customToken, hexName: e.target.value})}
+              required
+            />
+            <input
+              type="text"
+              placeholder="Ticker"
+              value={customToken.ticker}
+              onChange={(e) => setCustomToken({...customToken, ticker: e.target.value})}
+              required
+            />
+            <input
+              type="text"
+              placeholder="Full Name"
+              value={customToken.fullName}
+              onChange={(e) => setCustomToken({...customToken, fullName: e.target.value})}
+              required
+            />
+            <input
+              type="number"
+              placeholder="Decimals"
+              value={customToken.decimals}
+              onChange={(e) => setCustomToken({...customToken, decimals: parseInt(e.target.value)})}
+              required
+            />
+            <div className="customTokenFormButtons">
+              <button type="submit">Add Custom Token</button>
+              <button type="button" onClick={() => setShowCustomForm(false)}>Cancel</button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

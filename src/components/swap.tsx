@@ -195,7 +195,7 @@ const Swap = () => {
     const currency = type === 'sell' ? sellCurrency : buyCurrency;
     const currencyName = currency.policyId === '' ? 'lovelace' : currency.policyId + currency.hexName;
     const balance = userBalances[currencyName]
-
+  
   
     return (
       <div className="currencyInput">
@@ -217,7 +217,7 @@ const Swap = () => {
             }}
           />
           <div onClick={() => setIsModalOpen(type)} className='currencyButton'>
-            <img src={`${backendUrl}/assets/${currency.policyId}${currency.hexName}.png`} alt={currency.fullName} style={{width: '20px', height: '20px', marginRight: '5px'}} /> {currency.fullName} ▼
+            <img src={`${backendUrl}/assets/${currencyName}.png`} alt={currency.fullName} style={{width: '20px', height: '20px', marginRight: '5px'}} /> {currency.ticker} ▼
           </div>
         </div>
         <div className="inputDetails">

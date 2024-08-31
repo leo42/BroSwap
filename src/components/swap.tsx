@@ -11,8 +11,8 @@ import { TokenData } from './types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 
-//const backendUrl = 'https://swapapi.broclan.io';
-const backendUrl = 'http://localhost:3000';
+const backendUrl = 'https://swapapi.broclan.io';
+//const backendUrl = 'http://localhost:3000';
 interface ExtendedWalletApi extends LucidWalletApi {
   cip106?: {
     getScript: () => Promise<string>;

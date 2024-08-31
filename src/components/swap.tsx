@@ -33,15 +33,9 @@ const ADA : TokenData = {
 const Swap = () => {
   const [sellAmount, setSellAmount] = useState<number | null>(null);
   const [buyAmount, setBuyAmount] = useState<number | null>(null);
-  const [sellCurrency, setSellCurrency] = useState<TokenData>({
-    policyId: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
-    "ticker": "MIN",
-    "hexName": "4d494e",
-    "fullName" : "Minswap",
-    "decimals": 0
-  });
+  const [sellCurrency, setSellCurrency] = useState<TokenData>(ADA);
   
-  const [buyCurrency, setBuyCurrency] = useState<TokenData>(ADA);
+  const [buyCurrency, setBuyCurrency] = useState<TokenData>({"policyId":"a0028f350aaabe0545fdcb56b039bfb08e4bb4d8c4d7c3c7d481c235","hexName":"484f534b59","fullName":"HOSKY","ticker":"HOSKY","decimals":0});
 
   const [isModalOpen, setIsModalOpen] = useState<'sell' | 'buy' | null>(null);
   const [walletModalOpen, setWalletModalOpen] = useState(false);

@@ -9,8 +9,8 @@ import SwapIcon from './SwapIcon';
 import TokenSelectModal from './TokenSelectModal';
 import { TokenData } from './types';
 
-const backendUrl = 'https://swapapi.broclan.io';
-
+//const backendUrl = 'https://swapapi.broclan.io';
+const backendUrl = 'http://localhost:3000';
 interface ExtendedWalletApi extends LucidWalletApi {
   cip106?: {
     getScript: () => Promise<string>;
@@ -47,6 +47,7 @@ const Swap = () => {
   const [customSlippage, setCustomSlippage] = useState<string>('');
   // const [currentMarketPrice, setCurrentMarketPrice] = useState<number | null>(null);
   const [userBalances, setUserBalances] = useState<Record<string, number>>({});
+  const [activeInput, setActiveInput] = useState<'sell' | 'buy' | null>(null);
 
 
 
@@ -86,51 +87,69 @@ const Swap = () => {
   //   }
   // };
 
-  const calculateBuyAmount = useCallback(async () => {
-    if (sellAmount && sellCurrency && buyCurrency) {
-      try {
-        const queryParams = new URLSearchParams({
-          amountIn: sellAmount.toString(),
-          assetAPolicyId: sellCurrency.policyId || '',
-          assetATokenName: sellCurrency.hexName || '',
-          assetBPolicyId: buyCurrency.policyId || '',
-          assetBTokenName: buyCurrency.hexName || '',
-        });
 
-        const response = await fetch(`${backendUrl}/api/calculateOut?${queryParams}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
 
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
 
-        const data = await response.json();
-        setBuyAmount(Math.round(data.amountOut)); // Store as integer
-      } catch (error) {
-        console.error('Error calculating buy amount:', error);
-        setBuyAmount(null);
+
+
+  const calculateAmount = useCallback(async () => {
+    if (!activeInput || !sellCurrency || !buyCurrency) return;
+
+    const amount = activeInput === 'sell' ? sellAmount : buyAmount;
+    if (!amount) return;
+
+    try {
+      const queryParams = new URLSearchParams({
+        [activeInput === 'sell' ? 'amountIn' : 'amountOut']: amount.toString(),
+        assetAPolicyId: sellCurrency.policyId || '',
+        assetATokenName: sellCurrency.hexName || '',
+        assetBPolicyId: buyCurrency.policyId || '',
+        assetBTokenName: buyCurrency.hexName || '',
+      });
+
+      const endpoint = activeInput === 'sell' ? 'calculateOut' : 'calculateIn';
+      const response = await fetch(`${backendUrl}/api/${endpoint}?${queryParams}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
       }
-    } else {
-      setBuyAmount(null);
-    }
-  }, [sellAmount, sellCurrency, buyCurrency]);
 
-  const debouncedCalculateBuyAmount = useCallback(
-    debounce(calculateBuyAmount, 1000, { trailing: true }),
-    [calculateBuyAmount]
+      const data = await response.json();
+      if (activeInput === 'sell') {
+        setBuyAmount(Math.round(data.amountOut));
+      } else {
+        setSellAmount(Math.round(data.amountIn));
+      }
+    } catch (error) {
+      console.error('Error calculating amount:', error);
+      if (activeInput === 'sell') {
+        setBuyAmount(null);
+      } else {
+        setSellAmount(null);
+      }
+    }
+  }, [activeInput, sellAmount, buyAmount, sellCurrency, buyCurrency]);
+
+  const debouncedCalculateAmount = useCallback(
+    debounce(calculateAmount, 1000, { trailing: true }),
+    [calculateAmount]
   );
 
   useEffect(() => {
-    debouncedCalculateBuyAmount();
+    if (activeInput) {
+      debouncedCalculateAmount();
+    }
     return () => {
-      debouncedCalculateBuyAmount.cancel();
+      debouncedCalculateAmount.cancel();
     };
-  }, [sellAmount, sellCurrency, buyCurrency, debouncedCalculateBuyAmount]);
+  }, [sellAmount, buyAmount, sellCurrency, buyCurrency, activeInput, debouncedCalculateAmount]);
 
+   
   const handleCurrencyChange = (newCurrency: TokenData, policy: string, type: 'sell' | 'buy') => {
     const newCurrencyInfo: TokenData = {
       ...newCurrency,
@@ -188,7 +207,7 @@ const Swap = () => {
     const setAmount = type === 'sell' ? setSellAmount : setBuyAmount;
     const currency = type === 'sell' ? sellCurrency : buyCurrency;
     const currencyName = currency.policyId === '' ? 'lovelace' : currency.policyId + currency.hexName;
-    const balance = userBalances[currencyName]
+    const balance = userBalances[currencyName];
   
   
     return (
@@ -200,15 +219,15 @@ const Swap = () => {
             placeholder="0"
             value={formatDisplay(amount, currency.decimals)}
             onChange={(event) => {
-              
+              setActiveInput(type);
               const cleanedValue = event.target.value.replace(/,/g, '');
               const floatValue = parseFloat(cleanedValue);
               const intValue = Math.round(floatValue * Math.pow(10, currency.decimals));
               if (!isNaN(intValue)) {
                 setAmount(intValue);
               }
-              
             }}
+            onFocus={() => setActiveInput(type)}
           />
           <div onClick={() => setIsModalOpen(type)} className='currencyButton'>
             <img src={`${backendUrl}/assets/${currencyName}.png`} alt={currency.fullName} style={{width: '20px', height: '20px', marginRight: '5px'}} /> {currency.ticker} ▼
@@ -226,7 +245,7 @@ const Swap = () => {
                 onChange={(e) => {
                   const percentage = Number(e.target.value);
                   const newAmount = Math.floor((percentage / 100) * balance);
-                  setSellAmount(newAmount);
+                  setAmount(newAmount);
                 }}
                 />
               <span>{sellAmount !== null ? ((sellAmount / balance) * 100).toFixed(2) : '0'}%</span>
@@ -389,7 +408,7 @@ const Swap = () => {
               }
             }}
           />%
-        </div>
+                </div>
       );
     }
     return null;

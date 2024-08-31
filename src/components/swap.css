@@ -463,3 +463,31 @@ input[type="number"] {
 .customTokenFormButtons button:last-child {
   margin-left: 5px;
 }
+
+.priceImpact {
+  margin-top: 10px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.priceImpact.warning {
+  color: #ff9800; /* Orange color for warning */
+}
+
+.priceImpact.danger {
+  color: #f44336; /* Red color for danger */
+}
+
+.warningIcon {
+  margin-right: 5px;
+  font-size: 18px;
+}
+
+/* If you want to use a custom SVG icon, you can add this style */
+.warningIcon svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}

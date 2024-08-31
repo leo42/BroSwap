@@ -8,6 +8,8 @@ import debounce from 'lodash/debounce';
 import SwapIcon from './SwapIcon';
 import TokenSelectModal from './TokenSelectModal';
 import { TokenData } from './types';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 
 //const backendUrl = 'https://swapapi.broclan.io';
 const backendUrl = 'http://localhost:3000';
@@ -48,6 +50,7 @@ const Swap = () => {
   // const [currentMarketPrice, setCurrentMarketPrice] = useState<number | null>(null);
   const [userBalances, setUserBalances] = useState<Record<string, number>>({});
   const [activeInput, setActiveInput] = useState<'sell' | 'buy' | null>(null);
+  const [priceImpact, setPriceImpact] = useState<number | null>(null);
 
 
 
@@ -122,15 +125,19 @@ const Swap = () => {
       const data = await response.json();
       if (activeInput === 'sell') {
         setBuyAmount(Math.round(data.amountOut));
+        setPriceImpact(Number(data.priceImpact));
       } else {
         setSellAmount(Math.round(data.amountIn));
+        setPriceImpact(Number(data.priceImpact));
       }
     } catch (error) {
       console.error('Error calculating amount:', error);
       if (activeInput === 'sell') {
         setBuyAmount(null);
+        setPriceImpact(null);
       } else {
         setSellAmount(null);
+        setPriceImpact(null);
       }
     }
   }, [activeInput, sellAmount, buyAmount, sellCurrency, buyCurrency]);
@@ -450,6 +457,13 @@ const Swap = () => {
     }
   }, [wallet, walletApi]);
 
+  const getPriceImpactClass = () => {
+    if (priceImpact === null) return '';
+    if (priceImpact > slippage * 2) return 'danger';
+    if (priceImpact > slippage) return 'warning';
+    return '';
+  };
+
   return (
     <div className="swapContainer">
       {wallet ? 
@@ -487,6 +501,17 @@ const Swap = () => {
         </div>
         {currencyInput('buy')}
       </div>
+
+      {priceImpact !== null && (
+        <div className={`priceImpact ${getPriceImpactClass()}`}>
+          {priceImpact > slippage && (
+            <span className="warningIcon">
+              <FontAwesomeIcon icon={faExclamationTriangle} />
+            </span>
+          )}
+          Price Impact: {priceImpact.toFixed(2)}%
+        </div>
+      )}
 
       <button className="swapButton" disabled={sellAmount === null || buyAmount === null || sellAmount === 0 || buyAmount === 0} onClick={() => createSwap()}>Swap</button>
 

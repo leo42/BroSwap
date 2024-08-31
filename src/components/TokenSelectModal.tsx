@@ -39,7 +39,7 @@ const TokenSelectModal: React.FC<TokenSelectModalProps> = ({
         if (data.tokens.length < itemsPerPage) {
         setHasMore(false);
       }
-      setTokens([...tokens, ...data.tokens]);
+      if (page === 1) { setTokens(data.tokens); } else { setTokens([...tokens, ...data.tokens]); }
       setPage(prevPage => prevPage + 1);
       setTimeout(() => {
         setLoading(false);
@@ -54,24 +54,23 @@ const TokenSelectModal: React.FC<TokenSelectModalProps> = ({
   useEffect(() => {
     console.log('useEffect', isOpen);
     if (isOpen) {
-      setTokens([]);
       setPage(1);
+      setSearch('');
       setShowCustomForm(false)
       setHasMore(true);
     }
   }, [isOpen]);
 
   useEffect(() => {
-    if (isOpen && tokens.length === 0) {
+    if (isOpen && page === 1) {
       fetchTokens();
     }
-  }, [isOpen, tokens.length, fetchTokens]);
+  }, [isOpen, page , search, fetchTokens]);
 
   const debouncedSetSearch = useMemo(
     () => debounce((value: string) => {
       setSearch(value);
       setPage(1);
-      setTokens([]);
       setHasMore(true);
     }, 300),
     []

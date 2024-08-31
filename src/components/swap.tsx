@@ -9,7 +9,7 @@ import SwapIcon from './SwapIcon';
 import TokenSelectModal from './TokenSelectModal';
 import { TokenData } from './types';
 
-const backendUrl = 'http://localhost:3000';
+const backendUrl = 'https://swapapi.broclan.io';
 
 interface ExtendedWalletApi extends LucidWalletApi {
   cip106?: {

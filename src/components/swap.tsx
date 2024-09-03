@@ -51,8 +51,7 @@ const Swap = () => {
   const [userBalances, setUserBalances] = useState<Record<string, number>>({});
   const [activeInput, setActiveInput] = useState<'sell' | 'buy' | null>(null);
   const [priceImpact, setPriceImpact] = useState<number | null>(null);
-
-
+  const [error, setError] = useState<string | null>(null);
 
 
   // const fetchCurrentPrice = async () => {
@@ -119,6 +118,10 @@ const Swap = () => {
       });
 
       if (!response.ok) {
+        response.json().then(data => {
+          setError(data.error);
+        });
+        setError(response.statusText);
         throw new Error('Network response was not ok');
       }
 
@@ -126,9 +129,11 @@ const Swap = () => {
       if (activeInput === 'sell') {
         setBuyAmount(Math.round(data.amountOut));
         setPriceImpact(Number(data.priceImpact));
+        setError(null);
       } else {
         setSellAmount(Math.round(data.amountIn));
         setPriceImpact(Number(data.priceImpact));
+        setError(null);
       }
     } catch (error) {
       console.error('Error calculating amount:', error);
@@ -139,6 +144,7 @@ const Swap = () => {
         setSellAmount(null);
         setPriceImpact(null);
       }
+      setError(error.message);
     }
   }, [activeInput, sellAmount, buyAmount, sellCurrency, buyCurrency]);
 
@@ -512,7 +518,7 @@ const Swap = () => {
           Price Impact: {priceImpact.toFixed(2)}%
         </div>
       )}
-
+      {error && <div className="error">{error}</div>}
       <button className="swapButton" disabled={sellAmount === null || buyAmount === null || sellAmount === 0 || buyAmount === 0} onClick={() => createSwap()}>Swap</button>
 
       <TokenSelectModal
